@@ -3,7 +3,6 @@ import {
   EventDetail,
   NewsItem,
   ScheduleItem,
-  MatsedelItem,
   InfoSection,
   UserRole,
 } from '../types';
@@ -54,18 +53,21 @@ export async function fetchSchedule(
   return Array.isArray(data) ? data : data.schedule ?? [];
 }
 
-export async function fetchMatsedel(apiBase: string): Promise<MatsedelItem[]> {
-  const data = await get<{ matsedel: MatsedelItem[] } | MatsedelItem[]>(
-    `${apiBase}/api/matsedel`,
-  );
-  return Array.isArray(data) ? data : data.matsedel ?? [];
+export async function fetchMatsedel(apiBase: string): Promise<import('../types').MatsedelDay[]> {
+  const raw = await get<any>(`${apiBase}/api/matsedel`);
+  // Format: { week, days: [...] }
+  if (raw?.days && Array.isArray(raw.days)) return raw.days;
+  // Format: array of days directly
+  if (Array.isArray(raw)) return raw;
+  return [];
 }
 
 export async function fetchInfo(apiBase: string): Promise<InfoSection[]> {
-  const data = await get<{ info: InfoSection[] } | InfoSection[]>(
-    `${apiBase}/api/info`,
-  );
-  return Array.isArray(data) ? data : data.info ?? [];
+  const raw = await get<any>(`${apiBase}/api/info`);
+  if (Array.isArray(raw)) return raw;
+  if (raw?.info && Array.isArray(raw.info)) return raw.info;
+  if (raw?.sections && Array.isArray(raw.sections)) return raw.sections;
+  return [];
 }
 
 export async function fetchVapidKey(apiBase: string): Promise<string> {

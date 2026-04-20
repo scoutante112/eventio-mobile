@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import { EventTabParamList, MatsedelItem } from '../types';
+import { EventTabParamList, MatsedelDay } from '../types';
 import { fetchMatsedel } from '../api/eventio';
 import { useTheme } from '../theme/ThemeContext';
 import ScreenShell from '../components/ScreenShell';
@@ -9,20 +9,78 @@ import EventHeader from '../components/EventHeader';
 
 type Props = BottomTabScreenProps<EventTabParamList, 'Matsedel'>;
 
+const ALT_ICONS: Record<string, string> = {
+  vegetarian: '🌱',
+  vegan: '🌿',
+  'gluten-free': '🚫',
+};
+
+function MealRow({ time, name, description, alternatives }: MatsedelDay['meals'][0]) {
+  const { colors, event } = useTheme();
+  return (
+    <View style={[styles.mealRow, { borderTopColor: colors.border }]}>
+      <Text style={[styles.mealTime, { color: event.primary }]}>{time}</Text>
+      <View style={styles.mealBody}>
+        <Text style={[styles.mealName, { color: colors.text }]}>{name}</Text>
+        {description ? (
+          <Text style={[styles.mealDesc, { color: colors.textSecondary }]}>{description}</Text>
+        ) : null}
+        {alternatives?.map((alt, i) => (
+          <Text key={i} style={[styles.altText, { color: colors.textMuted }]}>
+            {ALT_ICONS[alt.type] ?? '•'} {alt.text}
+          </Text>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function DayCard({ day, isToday }: { day: MatsedelDay; isToday: boolean }) {
+  const { colors, event } = useTheme();
+  return (
+    <View
+      style={[
+        styles.dayCard,
+        {
+          backgroundColor: colors.card,
+          borderColor: isToday ? event.primary : colors.border,
+          borderLeftColor: event.primary,
+        },
+      ]}
+    >
+      <View style={[styles.dayHeader, { borderBottomColor: colors.border }]}>
+        <Text style={[styles.dayName, { color: isToday ? event.primary : colors.text }]}>
+          {day.name}
+          {isToday ? '  –  Idag' : ''}
+        </Text>
+        {day.subtitle ? (
+          <Text style={[styles.daySubtitle, { color: colors.textMuted }]}>{day.subtitle}</Text>
+        ) : null}
+      </View>
+      {day.meals.map((meal, i) => (
+        <MealRow key={i} {...meal} />
+      ))}
+    </View>
+  );
+}
+
 export default function MatsedelScreen({ route }: Props) {
   const { event, role } = route.params;
-  const [items, setItems] = useState<MatsedelItem[]>([]);
+  const [days, setDays] = useState<MatsedelDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { colors, event: theme } = useTheme();
+  const { colors } = useTheme();
+
+  const today = new Date().toISOString().split('T')[0];
 
   const load = useCallback(async () => {
     try {
       setError(null);
-      setItems(await fetchMatsedel(event.api_base));
-    } catch {
-      setError('Kunde inte hämta matsedeln.');
+      setDays(await fetchMatsedel(event.api_base));
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(`Kunde inte hämta matsedeln.\n${msg}`);
     }
   }, [event.api_base]);
 
@@ -34,78 +92,53 @@ export default function MatsedelScreen({ route }: Props) {
     setRefreshing(false);
   }, [load]);
 
-  const days = [...new Set(items.map((i) => i.date).filter(Boolean))];
-
   return (
     <ScreenShell loading={loading} error={error} onRetry={load} onRefresh={onRefresh} refreshing={refreshing}>
       <EventHeader event={event} role={role} subtitle="Matsedel" />
-      {items.length === 0 ? (
+      {days.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={{ color: colors.textMuted }}>Ingen matsedel tillgänglig.</Text>
+          <Text style={{ color: colors.textMuted, fontSize: 14 }}>Ingen matsedel tillgänglig.</Text>
         </View>
       ) : (
         <View style={styles.list}>
-          {days.length > 0
-            ? days.map((day) => (
-                <View key={day}>
-                  <Text style={[styles.dayHeader, { color: colors.textMuted }]}>{day}</Text>
-                  {items.filter((i) => i.date === day).map((item) => (
-                    <MealRow key={item.id} item={item} />
-                  ))}
-                </View>
-              ))
-            : items.map((item) => <MealRow key={item.id} item={item} />)}
+          {days.map((day, i) => (
+            <DayCard key={day.date ?? i} day={day} isToday={day.date === today} />
+          ))}
         </View>
       )}
     </ScreenShell>
   );
 }
 
-function MealRow({ item }: { item: MatsedelItem }) {
-  const { colors, event } = useTheme();
-  return (
-    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-      <View style={[styles.dot, { backgroundColor: event.primary }]} />
-      <View style={styles.cardBody}>
-        {item.time ? (
-          <Text style={[styles.time, { color: event.primary }]}>{item.time}</Text>
-        ) : null}
-        <Text style={[styles.meal, { color: colors.text }]}>{item.meal}</Text>
-        {item.description ? (
-          <Text style={[styles.desc, { color: colors.textSecondary }]}>{item.description}</Text>
-        ) : null}
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  list: { padding: 16, gap: 8 },
-  dayHeader: {
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    paddingVertical: 10,
-    paddingHorizontal: 4,
-  },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    borderRadius: 14,
+  list: { padding: 16, gap: 12 },
+  dayCard: {
+    borderRadius: 16,
     borderWidth: 1,
-    padding: 14,
+    borderLeftWidth: 4,
+    overflow: 'hidden',
+  },
+  dayHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  dayName: { fontSize: 15, fontWeight: '700' },
+  daySubtitle: { fontSize: 12 },
+  mealRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
     gap: 12,
   },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginTop: 6,
-  },
-  cardBody: { flex: 1, gap: 3 },
-  time: { fontSize: 12, fontWeight: '600' },
-  meal: { fontSize: 16, fontWeight: '700', letterSpacing: -0.2 },
-  desc: { fontSize: 13, lineHeight: 19 },
+  mealTime: { fontSize: 12, fontWeight: '700', width: 72, paddingTop: 2 },
+  mealBody: { flex: 1, gap: 3 },
+  mealName: { fontSize: 15, fontWeight: '600' },
+  mealDesc: { fontSize: 13, lineHeight: 19 },
+  altText: { fontSize: 12 },
   empty: { padding: 40, alignItems: 'center' },
 });

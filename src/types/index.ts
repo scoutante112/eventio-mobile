@@ -53,6 +53,25 @@ export interface ScheduleItem {
   day?: string;
 }
 
+export interface MatsedelAlternative {
+  type: 'vegetarian' | 'vegan' | 'gluten-free' | string;
+  text: string;
+}
+
+export interface MatsedelMeal {
+  time: string;
+  name: string;
+  description?: string;
+  alternatives?: MatsedelAlternative[];
+}
+
+export interface MatsedelDay {
+  date: string;
+  name: string;
+  subtitle?: string;
+  meals: MatsedelMeal[];
+}
+
 export interface MatsedelItem {
   id: number;
   meal: string;
