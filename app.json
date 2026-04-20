@@ -2,22 +2,22 @@
   "expo": {
     "name": "Eventio",
     "slug": "eventio",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
+    "scheme": "eventio",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "se.labnat.eventio",
       "infoPlist": {
-        "NSAppTransportSecurity": {
-          "NSAllowsArbitraryLoads": true
-        }
+        "NSAppTransportSecurity": { "NSAllowsArbitraryLoads": true },
+        "NSLocationWhenInUseUsageDescription": "Används för att visa din position på kartan."
       }
     },
     "android": {
@@ -26,25 +26,22 @@
         "backgroundColor": "#ffffff"
       },
       "package": "se.labnat.eventio",
-      "usesCleartextTraffic": true
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
+      "usesCleartextTraffic": true,
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
     },
     "plugins": [
+      "expo-router",
       [
         "expo-notifications",
-        {
-          "icon": "./assets/notification-icon.png",
-          "color": "#ffffff",
-          "sounds": []
-        }
+        { "icon": "./assets/notification-icon.png", "color": "#ffffff" }
+      ],
+      [
+        "expo-location",
+        { "locationWhenInUsePermission": "Används för att visa din position på kartan." }
       ]
     ],
     "extra": {
-      "eas": {
-        "projectId": "e22d856b-3c8f-4ecb-8912-f01c8052f4f9"
-      }
+      "eas": { "projectId": "e22d856b-3c8f-4ecb-8912-f01c8052f4f9" }
     },
     "owner": "scoutantes-organization"
   }
