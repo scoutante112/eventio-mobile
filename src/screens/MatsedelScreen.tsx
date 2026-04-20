@@ -10,7 +10,7 @@ import EventHeader from '../components/EventHeader';
 type Props = BottomTabScreenProps<EventTabParamList, 'Matsedel'>;
 
 export default function MatsedelScreen({ route }: Props) {
-  const { event } = route.params;
+  const { event, role } = route.params;
   const [items, setItems] = useState<MatsedelItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -20,16 +20,13 @@ export default function MatsedelScreen({ route }: Props) {
   const load = useCallback(async () => {
     try {
       setError(null);
-      const data = await fetchMatsedel(event.api_base);
-      setItems(data);
+      setItems(await fetchMatsedel(event.api_base));
     } catch {
       setError('Kunde inte hämta matsedeln.');
     }
   }, [event.api_base]);
 
-  useEffect(() => {
-    load().finally(() => setLoading(false));
-  }, [load]);
+  useEffect(() => { load().finally(() => setLoading(false)); }, [load]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -37,68 +34,78 @@ export default function MatsedelScreen({ route }: Props) {
     setRefreshing(false);
   }, [load]);
 
+  const days = [...new Set(items.map((i) => i.date).filter(Boolean))];
+
   return (
-    <ScreenShell
-      loading={loading}
-      error={error}
-      onRetry={load}
-      onRefresh={onRefresh}
-      refreshing={refreshing}
-    >
-      <EventHeader event={event} subtitle="Matsedel" />
+    <ScreenShell loading={loading} error={error} onRetry={load} onRefresh={onRefresh} refreshing={refreshing}>
+      <EventHeader event={event} role={role} subtitle="Matsedel" />
       {items.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={{ color: colors.subtext }}>Ingen matsedel tillgänglig.</Text>
+          <Text style={{ color: colors.textMuted }}>Ingen matsedel tillgänglig.</Text>
         </View>
       ) : (
-        items.map((item) => (
-          <View
-            key={item.id}
-            style={[styles.card, { backgroundColor: colors.card }]}
-          >
-            <View style={[styles.dot, { backgroundColor: theme.primary }]} />
-            <View style={styles.content}>
-              {(item.date || item.time) ? (
-                <Text style={[styles.meta, { color: colors.subtext }]}>
-                  {[item.date, item.time].filter(Boolean).join('  ·  ')}
-                </Text>
-              ) : null}
-              <Text style={[styles.meal, { color: colors.text }]}>{item.meal}</Text>
-              {item.description ? (
-                <Text style={[styles.desc, { color: colors.subtext }]}>{item.description}</Text>
-              ) : null}
-            </View>
-          </View>
-        ))
+        <View style={styles.list}>
+          {days.length > 0
+            ? days.map((day) => (
+                <View key={day}>
+                  <Text style={[styles.dayHeader, { color: colors.textMuted }]}>{day}</Text>
+                  {items.filter((i) => i.date === day).map((item) => (
+                    <MealRow key={item.id} item={item} />
+                  ))}
+                </View>
+              ))
+            : items.map((item) => <MealRow key={item.id} item={item} />)}
+        </View>
       )}
     </ScreenShell>
   );
 }
 
+function MealRow({ item }: { item: MatsedelItem }) {
+  const { colors, event } = useTheme();
+  return (
+    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <View style={[styles.dot, { backgroundColor: event.primary }]} />
+      <View style={styles.cardBody}>
+        {item.time ? (
+          <Text style={[styles.time, { color: event.primary }]}>{item.time}</Text>
+        ) : null}
+        <Text style={[styles.meal, { color: colors.text }]}>{item.meal}</Text>
+        {item.description ? (
+          <Text style={[styles.desc, { color: colors.textSecondary }]}>{item.description}</Text>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  list: { padding: 16, gap: 8 },
+  dayHeader: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+  },
   card: {
-    marginHorizontal: 16,
-    marginVertical: 6,
-    borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'flex-start',
-    padding: 16,
-    gap: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    gap: 12,
   },
   dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginTop: 5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginTop: 6,
   },
-  content: { flex: 1, gap: 4 },
-  meta: { fontSize: 12 },
-  meal: { fontSize: 16, fontWeight: '700' },
+  cardBody: { flex: 1, gap: 3 },
+  time: { fontSize: 12, fontWeight: '600' },
+  meal: { fontSize: 16, fontWeight: '700', letterSpacing: -0.2 },
   desc: { fontSize: 13, lineHeight: 19 },
-  empty: { padding: 32, alignItems: 'center' },
+  empty: { padding: 40, alignItems: 'center' },
 });

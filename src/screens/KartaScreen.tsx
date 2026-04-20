@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
@@ -9,35 +9,31 @@ import EventHeader from '../components/EventHeader';
 type Props = BottomTabScreenProps<EventTabParamList, 'Karta'>;
 
 export default function KartaScreen({ route }: Props) {
-  const { event } = route.params;
+  const { event, role } = route.params;
   const { colors, event: theme } = useTheme();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const mapUrl = `${event.api_base}/karta`;
+  const [webLoading, setWebLoading] = useState(true);
+  const [webError, setWebError] = useState(false);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <EventHeader event={event} subtitle="Karta" />
-      <View style={styles.webviewContainer}>
-        {loading && (
-          <View style={[styles.loadingOverlay, { backgroundColor: colors.background }]}>
+      <EventHeader event={event} role={role} subtitle="Karta" />
+      <View style={styles.webviewWrap}>
+        {webLoading && (
+          <View style={[styles.overlay, { backgroundColor: colors.background }]}>
             <ActivityIndicator size="large" color={theme.primary} />
           </View>
         )}
-        {error ? (
-          <View style={styles.errorContainer}>
-            <Text style={{ color: colors.subtext }}>Kartan kunde inte laddas.</Text>
+        {webError ? (
+          <View style={[styles.overlay, { backgroundColor: colors.background }]}>
+            <Text style={{ color: colors.textMuted }}>Kartan kunde inte laddas.</Text>
           </View>
         ) : (
           <WebView
-            source={{ uri: mapUrl }}
+            source={{ uri: `${event.api_base}/karta` }}
             style={styles.webview}
-            onLoadStart={() => setLoading(true)}
-            onLoadEnd={() => setLoading(false)}
-            onError={() => {
-              setLoading(false);
-              setError(true);
-            }}
+            onLoadStart={() => { setWebLoading(true); setWebError(false); }}
+            onLoadEnd={() => setWebLoading(false)}
+            onError={() => { setWebLoading(false); setWebError(true); }}
           />
         )}
       </View>
@@ -47,17 +43,12 @@ export default function KartaScreen({ route }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  webviewContainer: { flex: 1 },
+  webviewWrap: { flex: 1 },
   webview: { flex: 1 },
-  loadingOverlay: {
+  overlay: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });

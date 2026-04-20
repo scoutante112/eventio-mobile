@@ -12,22 +12,20 @@ type Props = BottomTabScreenProps<EventTabParamList, 'Schedule'>;
 function ScheduleRow({ item }: { item: ScheduleItem }) {
   const { colors, event } = useTheme();
   return (
-    <View style={[styles.row, { backgroundColor: colors.card, borderLeftColor: event.primary }]}>
-      <View style={styles.time}>
-        <Text style={[styles.timeText, { color: event.primary }]}>
-          {item.start_time}
-        </Text>
+    <View style={[styles.row, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <View style={[styles.timePill, { backgroundColor: colors.accentLight }]}>
+        <Text style={[styles.timeText, { color: event.primary }]}>{item.start_time}</Text>
         {item.end_time ? (
-          <Text style={[styles.endTime, { color: colors.subtext }]}>{item.end_time}</Text>
+          <Text style={[styles.endTime, { color: event.primary + 'AA' }]}>{item.end_time}</Text>
         ) : null}
       </View>
-      <View style={styles.rowContent}>
+      <View style={styles.rowBody}>
         <Text style={[styles.rowTitle, { color: colors.text }]}>{item.title}</Text>
         {item.location ? (
-          <Text style={[styles.rowMeta, { color: colors.subtext }]}>{item.location}</Text>
+          <Text style={[styles.rowMeta, { color: colors.textMuted }]}>📍 {item.location}</Text>
         ) : null}
         {item.description ? (
-          <Text style={[styles.rowDesc, { color: colors.subtext }]}>{item.description}</Text>
+          <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>{item.description}</Text>
         ) : null}
       </View>
     </View>
@@ -45,16 +43,13 @@ export default function ScheduleScreen({ route }: Props) {
   const load = useCallback(async () => {
     try {
       setError(null);
-      const data = await fetchSchedule(event.api_base, role);
-      setSchedule(data);
+      setSchedule(await fetchSchedule(event.api_base, role));
     } catch {
       setError('Kunde inte hämta schemat.');
     }
   }, [event.api_base, role]);
 
-  useEffect(() => {
-    load().finally(() => setLoading(false));
-  }, [load]);
+  useEffect(() => { load().finally(() => setLoading(false)); }, [load]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -65,72 +60,61 @@ export default function ScheduleScreen({ route }: Props) {
   const days = [...new Set(schedule.map((s) => s.day).filter(Boolean))];
 
   return (
-    <ScreenShell
-      loading={loading}
-      error={error}
-      onRetry={load}
-      onRefresh={onRefresh}
-      refreshing={refreshing}
-    >
-      <EventHeader
-        event={event}
-        subtitle={role === 'funkis' ? 'Schema — Funkis' : 'Schema — Deltagare'}
-      />
+    <ScreenShell loading={loading} error={error} onRetry={load} onRefresh={onRefresh} refreshing={refreshing}>
+      <EventHeader event={event} role={role} subtitle={role === 'funkis' ? 'Schema – Funkis' : 'Schema – Deltagare'} />
       {schedule.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={{ color: colors.subtext }}>Inget schema finns just nu.</Text>
+          <Text style={{ color: colors.textMuted }}>Inget schema finns just nu.</Text>
         </View>
-      ) : days.length > 0 ? (
-        days.map((day) => (
-          <View key={day}>
-            <Text style={[styles.dayHeader, { color: colors.subtext, backgroundColor: colors.background }]}>
-              {day}
-            </Text>
-            {schedule
-              .filter((s) => s.day === day)
-              .map((item) => <ScheduleRow key={item.id} item={item} />)}
-          </View>
-        ))
       ) : (
-        schedule.map((item) => <ScheduleRow key={item.id} item={item} />)
+        <View style={styles.list}>
+          {days.length > 0
+            ? days.map((day) => (
+                <View key={day}>
+                  <Text style={[styles.dayHeader, { color: colors.textMuted, backgroundColor: colors.background }]}>
+                    {day}
+                  </Text>
+                  {schedule.filter((s) => s.day === day).map((item) => (
+                    <ScheduleRow key={item.id} item={item} />
+                  ))}
+                </View>
+              ))
+            : schedule.map((item) => <ScheduleRow key={item.id} item={item} />)}
+        </View>
       )}
     </ScreenShell>
   );
 }
 
 const styles = StyleSheet.create({
+  list: { padding: 16, gap: 8 },
   row: {
-    marginHorizontal: 16,
-    marginVertical: 5,
-    borderRadius: 12,
     flexDirection: 'row',
+    borderRadius: 14,
+    borderWidth: 1,
     overflow: 'hidden',
-    borderLeftWidth: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    gap: 0,
   },
-  time: {
-    width: 70,
-    padding: 14,
+  timePill: {
+    width: 68,
+    padding: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 2,
   },
   timeText: { fontSize: 13, fontWeight: '700' },
-  endTime: { fontSize: 11, marginTop: 2 },
-  rowContent: { flex: 1, padding: 14, gap: 3 },
+  endTime: { fontSize: 11 },
+  rowBody: { flex: 1, padding: 12, gap: 3 },
   rowTitle: { fontSize: 15, fontWeight: '600' },
   rowMeta: { fontSize: 12 },
-  rowDesc: { fontSize: 13, lineHeight: 18, marginTop: 2 },
+  rowDesc: { fontSize: 13, lineHeight: 18 },
   dayHeader: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
-    paddingHorizontal: 20,
+    paddingHorizontal: 4,
     paddingVertical: 10,
   },
-  empty: { padding: 32, alignItems: 'center' },
+  empty: { padding: 40, alignItems: 'center' },
 });

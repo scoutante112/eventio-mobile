@@ -5,9 +5,9 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
-  useColorScheme,
 } from 'react-native';
 import { EventSummary } from '../types';
+import { useTheme } from '../theme/ThemeContext';
 
 interface Props {
   event: EventSummary;
@@ -17,65 +17,58 @@ interface Props {
 function formatDateRange(start: string, end: string): string {
   const s = new Date(start);
   const e = new Date(end);
-  const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
-  if (s.getFullYear() !== e.getFullYear()) {
-    return `${s.toLocaleDateString('sv-SE', { ...opts, year: 'numeric' })} – ${e.toLocaleDateString('sv-SE', { ...opts, year: 'numeric' })}`;
-  }
-  return `${s.toLocaleDateString('sv-SE', opts)} – ${e.toLocaleDateString('sv-SE', { ...opts, year: 'numeric' })}`;
+  const sStr = s.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+  const eStr = e.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' });
+  return `${sStr} – ${eStr}`;
 }
 
 export default function EventCard({ event, onPress }: Props) {
-  const isDark = useColorScheme() === 'dark';
+  const { colors } = useTheme();
 
   return (
     <TouchableOpacity
       onPress={onPress}
-      activeOpacity={0.85}
-      style={[styles.card, { backgroundColor: isDark ? '#1F2937' : '#FFFFFF' }]}
+      activeOpacity={0.7}
+      style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
     >
-      <View
-        style={[styles.accent, { backgroundColor: event.color_primary }]}
-      />
-      <View style={styles.content}>
+      {/* Logo / color strip */}
+      <View style={[styles.logoContainer, { backgroundColor: event.color_primary + '15' }]}>
         {event.logo_url ? (
-          <Image
-            source={{ uri: event.logo_url }}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          <Image source={{ uri: event.logo_url }} style={styles.logo} resizeMode="contain" />
         ) : (
-          <View
-            style={[styles.logoPlaceholder, { backgroundColor: event.color_primary }]}
-          />
-        )}
-        <View style={styles.info}>
-          <Text
-            style={[styles.name, { color: isDark ? '#F9FAFB' : '#111827' }]}
-            numberOfLines={1}
-          >
-            {event.name}
-          </Text>
-          {event.tagline ? (
-            <Text
-              style={[styles.tagline, { color: isDark ? '#9CA3AF' : '#6B7280' }]}
-              numberOfLines={1}
-            >
-              {event.tagline}
-            </Text>
-          ) : null}
-          <View style={styles.meta}>
-            <Text style={[styles.metaText, { color: event.color_primary }]}>
-              {event.location}
-            </Text>
-            <Text style={[styles.metaDot, { color: isDark ? '#6B7280' : '#9CA3AF' }]}>
-              {'  ·  '}
-            </Text>
-            <Text style={[styles.metaText, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
-              {formatDateRange(event.start_date, event.end_date)}
+          <View style={[styles.logoFallback, { backgroundColor: event.color_primary }]}>
+            <Text style={styles.logoFallbackText}>
+              {event.name.charAt(0)}
             </Text>
           </View>
+        )}
+      </View>
+
+      {/* Content */}
+      <View style={styles.body}>
+        <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
+          {event.name}
+        </Text>
+        {event.tagline ? (
+          <Text style={[styles.tagline, { color: colors.textSecondary }]} numberOfLines={1}>
+            {event.tagline}
+          </Text>
+        ) : null}
+
+        <View style={styles.metaRow}>
+          <View style={[styles.badge, { backgroundColor: event.color_primary + '18' }]}>
+            <Text style={[styles.badgeText, { color: event.color_primary }]}>
+              {event.location}
+            </Text>
+          </View>
+          <Text style={[styles.date, { color: colors.textMuted }]}>
+            {formatDateRange(event.start_date, event.end_date)}
+          </Text>
         </View>
       </View>
+
+      {/* Right arrow */}
+      <Text style={[styles.arrow, { color: colors.textMuted }]}>›</Text>
     </TouchableOpacity>
   );
 }
@@ -83,58 +76,76 @@ export default function EventCard({ event, onPress }: Props) {
 const styles = StyleSheet.create({
   card: {
     marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 16,
+    marginVertical: 6,
+    borderRadius: 18,
+    borderWidth: 1,
     flexDirection: 'row',
+    alignItems: 'center',
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.05,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 2,
   },
-  accent: {
-    width: 6,
-  },
-  content: {
-    flex: 1,
-    flexDirection: 'row',
+  logoContainer: {
+    width: 76,
+    height: 76,
+    justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
-    gap: 14,
   },
   logo: {
-    width: 56,
-    height: 56,
-    borderRadius: 10,
+    width: 48,
+    height: 48,
+    borderRadius: 12,
   },
-  logoPlaceholder: {
-    width: 56,
-    height: 56,
-    borderRadius: 10,
+  logoFallback: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  info: {
+  logoFallbackText: {
+    color: '#FFF',
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  body: {
     flex: 1,
-    gap: 3,
+    paddingVertical: 16,
+    paddingRight: 4,
+    gap: 4,
   },
   name: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
   },
   tagline: {
     fontSize: 13,
   },
-  meta: {
+  metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
     marginTop: 2,
   },
-  metaText: {
-    fontSize: 12,
-    fontWeight: '500',
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
-  metaDot: {
+  badgeText: {
     fontSize: 12,
+    fontWeight: '600',
+  },
+  date: {
+    fontSize: 12,
+  },
+  arrow: {
+    fontSize: 22,
+    paddingHorizontal: 14,
+    fontWeight: '300',
   },
 });

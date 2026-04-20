@@ -15,6 +15,7 @@ import { RootStackParamList, EventSummary, UserRole } from '../types';
 import { fetchEvents } from '../api/eventio';
 import { getRole } from '../store/storage';
 import EventCard from '../components/EventCard';
+import { useTheme } from '../theme/ThemeContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -24,8 +25,8 @@ export default function HomeScreen({ navigation }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isDark = useColorScheme() === 'dark';
-  const bg = isDark ? '#111827' : '#F9FAFB';
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
 
   const load = useCallback(async () => {
     try {
@@ -55,8 +56,6 @@ export default function HomeScreen({ navigation }: Props) {
       if (savedRole) {
         navigation.navigate('EventTabs', { event, role: savedRole });
       } else {
-        // fetchEventDetail to check if funkis is enabled would be ideal
-        // but we navigate to RoleSelect which handles that check
         navigation.navigate('RoleSelect', { event });
       }
     },
@@ -65,29 +64,29 @@ export default function HomeScreen({ navigation }: Props) {
 
   if (loading) {
     return (
-      <View style={[styles.center, { backgroundColor: bg }]}>
-        <ActivityIndicator size="large" color="#4F46E5" />
+      <View style={[styles.center, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+        <ActivityIndicator size="large" color="#6366F1" />
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: bg, paddingTop: insets.top }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-      <View style={[styles.header, { backgroundColor: isDark ? '#1F2937' : '#FFFFFF' }]}>
-        <Text style={[styles.appTitle, { color: isDark ? '#F9FAFB' : '#111827' }]}>
-          Eventio
-        </Text>
-        <Text style={[styles.appSubtitle, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
-          Välj ett event för att komma igång
-        </Text>
+
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 16, backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <View>
+          <Text style={[styles.appTitle, { color: colors.text }]}>Eventio</Text>
+          <Text style={[styles.appSubtitle, { color: colors.textSecondary }]}>
+            {events.length > 0 ? `${events.length} aktiva event` : 'Inga aktiva event'}
+          </Text>
+        </View>
       </View>
 
       {error ? (
         <View style={styles.center}>
-          <Text style={[styles.errorText, { color: isDark ? '#F87171' : '#EF4444' }]}>
-            {error}
-          </Text>
+          <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
         </View>
       ) : (
         <FlatList
@@ -96,15 +95,13 @@ export default function HomeScreen({ navigation }: Props) {
           renderItem={({ item }) => (
             <EventCard event={item} onPress={() => handleEventPress(item)} />
           )}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 24 }]}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366F1" />
           }
           ListEmptyComponent={
             <View style={styles.center}>
-              <Text style={{ color: isDark ? '#9CA3AF' : '#6B7280' }}>
-                Inga aktiva event hittades.
-              </Text>
+              <Text style={{ color: colors.textMuted }}>Inga aktiva event hittades.</Text>
             </View>
           }
         />
@@ -118,15 +115,13 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 20,
     paddingBottom: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E7EB',
   },
   appTitle: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: '800',
-    letterSpacing: -0.5,
+    letterSpacing: -0.8,
   },
   appSubtitle: {
     fontSize: 14,
@@ -134,10 +129,9 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingTop: 12,
-    paddingBottom: 32,
   },
   errorText: {
-    fontSize: 15,
+    fontSize: 14,
     textAlign: 'center',
   },
 });

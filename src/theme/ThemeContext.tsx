@@ -1,37 +1,74 @@
+'use client';
 import React, { createContext, useContext } from 'react';
 import { useColorScheme } from 'react-native';
 
-interface EventTheme {
-  primary: string;
-  secondary: string;
+export interface AppColors {
+  background: string;
+  surface: string;
+  card: string;
+  border: string;
+  text: string;
+  textSecondary: string;
+  textMuted: string;
+  accent: string;
+  accentLight: string;
+  accentText: string;
+  tabBar: string;
+  tabBarBorder: string;
+  danger: string;
 }
 
-interface ThemeContextValue {
-  event: EventTheme;
+export interface AppTheme {
   isDark: boolean;
-  colors: {
-    background: string;
-    card: string;
-    text: string;
-    subtext: string;
-    border: string;
-    surface: string;
+  colors: AppColors;
+  event: {
+    primary: string;
+    secondary: string;
   };
 }
 
-const defaultEvent: EventTheme = { primary: '#4F46E5', secondary: '#7C3AED' };
+const DEFAULT_PRIMARY = '#6366F1';
+const DEFAULT_SECONDARY = '#8B5CF6';
 
-const ThemeContext = createContext<ThemeContextValue>({
-  event: defaultEvent,
-  isDark: false,
-  colors: {
-    background: '#F9FAFB',
-    card: '#FFFFFF',
-    text: '#111827',
-    subtext: '#6B7280',
-    border: '#E5E7EB',
+function buildColors(isDark: boolean, primary: string): AppColors {
+  if (isDark) {
+    return {
+      background: '#09090B',
+      surface: '#18181B',
+      card: '#1C1C1E',
+      border: '#2C2C2E',
+      text: '#FAFAFA',
+      textSecondary: '#A1A1AA',
+      textMuted: '#52525B',
+      accent: primary,
+      accentLight: primary + '22',
+      accentText: '#FFFFFF',
+      tabBar: '#18181B',
+      tabBarBorder: '#2C2C2E',
+      danger: '#F87171',
+    };
+  }
+  return {
+    background: '#F4F4F5',
     surface: '#FFFFFF',
-  },
+    card: '#FFFFFF',
+    border: '#E4E4E7',
+    text: '#09090B',
+    textSecondary: '#52525B',
+    textMuted: '#A1A1AA',
+    accent: primary,
+    accentLight: primary + '18',
+    accentText: '#FFFFFF',
+    tabBar: '#FFFFFF',
+    tabBarBorder: '#E4E4E7',
+    danger: '#EF4444',
+  };
+}
+
+const ThemeContext = createContext<AppTheme>({
+  isDark: false,
+  colors: buildColors(false, DEFAULT_PRIMARY),
+  event: { primary: DEFAULT_PRIMARY, secondary: DEFAULT_SECONDARY },
 });
 
 interface Props {
@@ -43,32 +80,17 @@ interface Props {
 export function ThemeProvider({ children, primary, secondary }: Props) {
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
-
-  const event: EventTheme = {
-    primary: primary ?? defaultEvent.primary,
-    secondary: secondary ?? defaultEvent.secondary,
-  };
-
-  const colors = isDark
-    ? {
-        background: '#111827',
-        card: '#1F2937',
-        text: '#F9FAFB',
-        subtext: '#9CA3AF',
-        border: '#374151',
-        surface: '#1F2937',
-      }
-    : {
-        background: '#F9FAFB',
-        card: '#FFFFFF',
-        text: '#111827',
-        subtext: '#6B7280',
-        border: '#E5E7EB',
-        surface: '#FFFFFF',
-      };
+  const p = primary ?? DEFAULT_PRIMARY;
+  const s = secondary ?? DEFAULT_SECONDARY;
 
   return (
-    <ThemeContext.Provider value={{ event, isDark, colors }}>
+    <ThemeContext.Provider
+      value={{
+        isDark,
+        colors: buildColors(isDark, p),
+        event: { primary: p, secondary: s },
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   );

@@ -10,7 +10,7 @@ import EventHeader from '../components/EventHeader';
 type Props = BottomTabScreenProps<EventTabParamList, 'Info'>;
 
 export default function InfoScreen({ route }: Props) {
-  const { event } = route.params;
+  const { event, role } = route.params;
   const [sections, setSections] = useState<InfoSection[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -20,16 +20,13 @@ export default function InfoScreen({ route }: Props) {
   const load = useCallback(async () => {
     try {
       setError(null);
-      const data = await fetchInfo(event.api_base);
-      setSections(data);
+      setSections(await fetchInfo(event.api_base));
     } catch {
       setError('Kunde inte hämta informationen.');
     }
   }, [event.api_base]);
 
-  useEffect(() => {
-    load().finally(() => setLoading(false));
-  }, [load]);
+  useEffect(() => { load().finally(() => setLoading(false)); }, [load]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -38,63 +35,50 @@ export default function InfoScreen({ route }: Props) {
   }, [load]);
 
   return (
-    <ScreenShell
-      loading={loading}
-      error={error}
-      onRetry={load}
-      onRefresh={onRefresh}
-      refreshing={refreshing}
-    >
-      <EventHeader event={event} subtitle="Info" />
+    <ScreenShell loading={loading} error={error} onRetry={load} onRefresh={onRefresh} refreshing={refreshing}>
+      <EventHeader event={event} role={role} subtitle="Info" />
       {sections.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={{ color: colors.subtext }}>Ingen info tillgänglig.</Text>
+          <Text style={{ color: colors.textMuted }}>Ingen info tillgänglig.</Text>
         </View>
       ) : (
-        sections.map((section) => (
-          <View key={section.id} style={[styles.section, { backgroundColor: colors.card }]}>
-            <View style={[styles.titleBar, { backgroundColor: theme.primary }]}>
-              <Text style={styles.sectionTitle}>{section.title}</Text>
+        <View style={styles.list}>
+          {sections.map((section) => (
+            <View key={section.id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={[styles.cardHeader, { borderBottomColor: colors.border }]}>
+                <View style={[styles.dot, { backgroundColor: theme.primary }]} />
+                <Text style={[styles.cardTitle, { color: colors.text }]}>{section.title}</Text>
+              </View>
+              <Text style={[styles.cardBody, { color: colors.textSecondary }]}>{section.body}</Text>
             </View>
-            <View style={styles.sectionBody}>
-              <Text style={[styles.sectionText, { color: colors.text }]}>
-                {section.body}
-              </Text>
-            </View>
-          </View>
-        ))
+          ))}
+        </View>
       )}
     </ScreenShell>
   );
 }
 
 const styles = StyleSheet.create({
-  section: {
-    marginHorizontal: 16,
-    marginVertical: 8,
+  list: { padding: 16, gap: 12 },
+  card: {
     borderRadius: 16,
+    borderWidth: 1,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 5,
-    elevation: 2,
   },
-  titleBar: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 14,
+    paddingBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  sectionTitle: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  sectionBody: {
-    padding: 16,
-  },
-  sectionText: {
-    fontSize: 14,
-    lineHeight: 22,
-  },
-  empty: { padding: 32, alignItems: 'center' },
+  cardTitle: { fontSize: 15, fontWeight: '700' },
+  cardBody: { padding: 14, fontSize: 14, lineHeight: 22 },
+  empty: { padding: 40, alignItems: 'center' },
 });

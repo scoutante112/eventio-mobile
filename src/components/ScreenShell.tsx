@@ -42,15 +42,18 @@ export default function ScreenShell({
   if (error) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <Text style={[styles.errorText, { color: colors.text }]}>{error}</Text>
-        {onRetry && (
-          <TouchableOpacity
-            style={[styles.retryBtn, { backgroundColor: event.primary }]}
-            onPress={onRetry}
-          >
-            <Text style={styles.retryText}>Försök igen</Text>
-          </TouchableOpacity>
-        )}
+        <View style={[styles.errorBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Ionicons name="warning-outline" size={28} color={colors.danger} />
+          <Text style={[styles.errorText, { color: colors.text }]}>{error}</Text>
+          {onRetry && (
+            <TouchableOpacity
+              style={[styles.retryBtn, { backgroundColor: event.primary }]}
+              onPress={onRetry}
+            >
+              <Text style={styles.retryText}>Försök igen</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     );
   }
@@ -82,15 +85,26 @@ export default function ScreenShell({
   );
 }
 
+import { Ionicons } from '@expo/vector-icons';
+
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   fill: { flex: 1 },
-  scrollContent: { paddingBottom: 32 },
-  errorText: { fontSize: 15, textAlign: 'center', marginBottom: 16 },
-  retryBtn: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
+  scrollContent: { paddingBottom: 40 },
+  errorBox: {
+    width: '100%',
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 24,
+    alignItems: 'center',
+    gap: 12,
   },
-  retryText: { color: '#FFF', fontWeight: '600' },
+  errorText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  retryBtn: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginTop: 4,
+  },
+  retryText: { color: '#FFF', fontWeight: '600', fontSize: 14 },
 });

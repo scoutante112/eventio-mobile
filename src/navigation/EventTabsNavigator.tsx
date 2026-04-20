@@ -32,11 +32,14 @@ function TabsContent({
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: colors.card,
-          borderTopColor: colors.border,
+          backgroundColor: colors.tabBar,
+          borderTopColor: colors.tabBarBorder,
+          elevation: 0,
+          shadowOpacity: 0,
         },
         tabBarActiveTintColor: theme.primary,
-        tabBarInactiveTintColor: colors.subtext,
+        tabBarInactiveTintColor: colors.textMuted,
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '500', marginBottom: 2 },
         tabBarIcon: ({ color, size }) => {
           const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
             News: 'newspaper-outline',

@@ -10,6 +10,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, UserRole, EventDetail } from '../types';
 import { fetchEventDetail } from '../api/eventio';
@@ -22,11 +23,13 @@ export default function RoleSelectScreen({ route, navigation }: Props) {
   const [detail, setDetail] = useState<EventDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const isDark = useColorScheme() === 'dark';
-  const bg = isDark ? '#111827' : '#F9FAFB';
-  const cardBg = isDark ? '#1F2937' : '#FFFFFF';
-  const textColor = isDark ? '#F9FAFB' : '#111827';
-  const subtextColor = isDark ? '#9CA3AF' : '#6B7280';
   const insets = useSafeAreaInsets();
+
+  const bg = isDark ? '#09090B' : '#F4F4F5';
+  const cardBg = isDark ? '#1C1C1E' : '#FFFFFF';
+  const textColor = isDark ? '#FAFAFA' : '#09090B';
+  const subtextColor = isDark ? '#A1A1AA' : '#52525B';
+  const borderColor = isDark ? '#2C2C2E' : '#E4E4E7';
 
   useEffect(() => {
     fetchEventDetail(event.api_base)
@@ -48,7 +51,6 @@ export default function RoleSelectScreen({ route, navigation }: Props) {
     );
   }
 
-  // If funkis is not enabled, skip role selection and go straight as deltagare
   if (!detail.features.enable_funkis) {
     selectRole('deltagare');
     return null;
@@ -57,43 +59,52 @@ export default function RoleSelectScreen({ route, navigation }: Props) {
   return (
     <View style={[styles.container, { backgroundColor: bg, paddingTop: insets.top }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-      <View style={styles.inner}>
-        {event.logo_url ? (
-          <Image
-            source={{ uri: event.logo_url }}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        ) : null}
-        <Text style={[styles.title, { color: textColor }]}>{event.name}</Text>
-        <Text style={[styles.subtitle, { color: subtextColor }]}>
-          Välj din roll för eventet
-        </Text>
 
+      <View style={styles.inner}>
+        {/* Logo */}
+        {event.logo_url ? (
+          <View style={[styles.logoWrap, { backgroundColor: event.color_primary + '18', borderColor: event.color_primary + '30' }]}>
+            <Image source={{ uri: event.logo_url }} style={styles.logo} resizeMode="contain" />
+          </View>
+        ) : (
+          <View style={[styles.logoWrap, { backgroundColor: event.color_primary }]}>
+            <Text style={styles.logoFallback}>{event.name.charAt(0)}</Text>
+          </View>
+        )}
+
+        <Text style={[styles.title, { color: textColor }]}>{event.name}</Text>
+        <Text style={[styles.subtitle, { color: subtextColor }]}>Välj hur du deltar</Text>
+
+        {/* Role buttons */}
         <View style={styles.buttons}>
           <TouchableOpacity
-            style={[styles.roleButton, { backgroundColor: event.color_primary }]}
+            style={[styles.roleCard, { backgroundColor: cardBg, borderColor: borderColor }]}
             onPress={() => selectRole('deltagare')}
-            activeOpacity={0.85}
+            activeOpacity={0.7}
           >
-            <Text style={styles.roleButtonText}>Deltagare</Text>
-            <Text style={styles.roleButtonSub}>Jag deltar i eventet</Text>
+            <View style={[styles.roleIcon, { backgroundColor: event.color_primary + '18' }]}>
+              <Ionicons name="person-outline" size={22} color={event.color_primary} />
+            </View>
+            <View style={styles.roleText}>
+              <Text style={[styles.roleTitle, { color: textColor }]}>Deltagare</Text>
+              <Text style={[styles.roleDesc, { color: subtextColor }]}>Jag deltar i eventet</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={subtextColor} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[
-              styles.roleButton,
-              { backgroundColor: cardBg, borderWidth: 2, borderColor: event.color_primary },
-            ]}
+            style={[styles.roleCard, { backgroundColor: cardBg, borderColor: borderColor }]}
             onPress={() => selectRole('funkis')}
-            activeOpacity={0.85}
+            activeOpacity={0.7}
           >
-            <Text style={[styles.roleButtonText, { color: event.color_primary }]}>
-              Funkis
-            </Text>
-            <Text style={[styles.roleButtonSub, { color: subtextColor }]}>
-              Jag jobbar på eventet
-            </Text>
+            <View style={[styles.roleIcon, { backgroundColor: event.color_secondary + '18' }]}>
+              <Ionicons name="construct-outline" size={22} color={event.color_secondary} />
+            </View>
+            <View style={styles.roleText}>
+              <Text style={[styles.roleTitle, { color: textColor }]}>Funkis</Text>
+              <Text style={[styles.roleDesc, { color: subtextColor }]}>Jag jobbar på eventet</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={subtextColor} />
           </TouchableOpacity>
         </View>
       </View>
@@ -108,44 +119,39 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
-    gap: 12,
-  },
-  logo: {
-    width: 100,
-    height: 100,
-    marginBottom: 8,
-    borderRadius: 20,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '800',
-    textAlign: 'center',
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 15,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  buttons: {
-    width: '100%',
+    paddingHorizontal: 24,
     gap: 14,
-    marginTop: 12,
   },
-  roleButton: {
-    borderRadius: 16,
-    padding: 20,
+  logoWrap: {
+    width: 88,
+    height: 88,
+    borderRadius: 22,
+    borderWidth: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 4,
+    marginBottom: 4,
   },
-  roleButtonText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
+  logo: { width: 64, height: 64, borderRadius: 14 },
+  logoFallback: { color: '#FFF', fontSize: 32, fontWeight: '800' },
+  title: { fontSize: 24, fontWeight: '800', letterSpacing: -0.5, textAlign: 'center' },
+  subtitle: { fontSize: 15, marginBottom: 8 },
+  buttons: { width: '100%', gap: 12 },
+  roleCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    gap: 14,
   },
-  roleButtonSub: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.8)',
+  roleIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
+  roleText: { flex: 1, gap: 2 },
+  roleTitle: { fontSize: 16, fontWeight: '600' },
+  roleDesc: { fontSize: 13 },
 });
